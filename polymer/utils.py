@@ -5,6 +5,7 @@ import numpy as np
 from scipy.ndimage import convolve
 from numpy import ones, sqrt, zeros_like, NaN, isnan
 from os import system
+import shutil
 from scipy.interpolate import RectBivariateSpline
 from scipy.ndimage import distance_transform_edt
 from datetime import datetime, timedelta
@@ -15,14 +16,15 @@ import gzip
 def coeff_sun_earth_distance(jday):
     jday -= 1
 
-    A=1.00014
-    B=0.01671
-    C=0.9856002831
-    D=3.4532858
-    E=360.
-    F=0.00014
+    A = 1.00014
+    B = 0.01671
+    C = 0.9856002831
+    D = 3.4532858
+    E = 360.
+    F = 0.00014
 
-    coef  = 1./((A - B*np.cos(2*np.pi*(C*jday - D)/E) - F*np.cos(4*np.pi*(C*jday - D)/E))**2)
+    coef = 1./((A - B*np.cos(2*np.pi*(C*jday - D)/E) -
+               F*np.cos(4*np.pi*(C*jday - D)/E))**2)
 
     return coef
 
@@ -34,9 +36,13 @@ def safemove(A, B):
     '''
     if B+'.tmp' == A:
         # no need for intermediary copy
+        """ 
         cmd = 'mv {} {}'.format(A, B)
         if system(cmd):
             raise IOError('Error executing "{}"'.format(cmd))
+        """
+        shutil.move(A, B)
+
     else:
         cmd = 'mv {} {}'.format(A, B+'.tmp')
         if system(cmd):
@@ -58,7 +64,8 @@ def landmask(lat, lon, resolution='l'):
     (uses basemap)
     '''
     from mpl_toolkits.basemap import maskoceans
-    landmask = ~maskoceans(lon, lat, zeros_like(lat), resolution=resolution).mask
+    landmask = ~maskoceans(lon, lat, zeros_like(lat),
+                           resolution=resolution).mask
     return landmask
 
 
@@ -83,14 +90,14 @@ class ListOnDisk(object):
             print('loaded {} items from {}'.format(
                 len(self.__list),
                 self.__filename,
-                ))
+            ))
             fp.close()
 
     def __contains__(self, item):
         return item in self.__list
 
     def append(self, item):
-        assert type(item) is str # only strings
+        assert type(item) is str  # only strings
 
         self.__list.append(item)
         self.__towrite.append(item)
@@ -129,7 +136,7 @@ def stdev(S, S2, N, fillv=NaN):
     R = zeros_like(S) + fillv
     ok = N != 0
     R[ok] = S2[ok]/N[ok] - (S[ok]/N[ok])**2
-    R[R<0] = 0.   # because a few values may be slightly negative
+    R[R < 0] = 0.   # because a few values may be slightly negative
     R[ok] = sqrt(R[ok])
     return R
 
@@ -145,7 +152,7 @@ def stdNxN(X, N, mask=None, fillv=NaN):
         M = mask
 
     # kernel
-    ker = ones((N,N))
+    ker = ones((N, N))
 
     # sum of the values
     S = convolve(X*M, ker, mode='constant', cval=0)
@@ -177,12 +184,14 @@ def rectBivariateSpline(A, shp):
     if invalid.any():
         # fill nans
         # see http://stackoverflow.com/questions/3662361/
-        ind = distance_transform_edt(invalid, return_distances=False, return_indices=True)
+        ind = distance_transform_edt(
+            invalid, return_distances=False, return_indices=True)
         A = A[tuple(ind)]
 
     f = RectBivariateSpline(x, y, A)
 
     return f(xin, yin).astype('float32')
+
 
 def pstr(x):
     '''
