@@ -1,0 +1,742 @@
+
+                           #####################
+                           #                   #
+                           # Polymer changelog #
+                           #                   #
+                           #####################
+
+
+v4.14
+-----
+
+Release date: 2021-12-17
+
+Various fixes and updates:
+
+* Added support for MERIS 4th reprocessing. The class `Level1_MERIS` can be used for both 3rd and 4th reprocessing
+
+* Add a flag called ANOMALY_RWMOD_BLUE (value 4096), designed to filter anomalous pixels on MODIS, especially
+  for recent years and high sun zenith angles. Improved the README section regarding the quality flags.
+
+* OLCI: avoid flagging inland waters by default
+
+* Ancillary_NASA: General rework of the module, allowing support for NCEP forecast files.
+
+* Updated dependencies installation script (see README)
+
+* Landsat8: support level1 products from collection 2
+
+Other fixes:
+* Fix ozone unit in Level1_NETCDF
+* Support land bands in MODIS
+  MODIS land bands (469, 555... ) are now supported, though not provided by default in the output
+  They can be processed by tuning the parameter `bands_rw`.
+* Fixed Level1_ASCII
+* Fixes for Landsat8:
+  - Fixed lat/lon swapping when using gdal v3
+  - Added support for Landsat8 SWIR bands
+  - Added autodetection in Level1 class
+* Sentinel-2 MSI: fixed an offset of half a pixel in lat/lon
+
+Summary of products evolution:
+* lat/lon coordinates of S2 and L8.
+* inland waters flagging for OLCI
+* added flag ANOMALY_RWMOD_BLUE
+
+v4.13
+-----
+
+Release date: 2020-03-25
+
+This release fixes some bugs, and do not involve product modification
+(except when using ERA5 ancillary data)
+
+* OLCI: Fix a bug involving masked arrays when using ancillary data
+
+* ERA5 ancillary data: fix a bug in the interpolation of ERA5 ancillary data
+
+* NASA ancillary data: support EarthData authentication
+
+Minor changes:
+* MSI: Add band 842 by default in the outputs
+* Consistently use float32 dtype for Rgli output variable
+
+Summary of products evolution:
+* No impact, except when using ERA5 ancillary data.
+
+
+v4.12
+-----
+
+Release date: 2019-09-11
+
+* Updated OLCI-A SVC
+  Note: OLCI-A gains are also applied by default to OLCI-B.
+
+* Ancillary data: added support for ECMWF ERA5 in polymer/ancillary_era5.py
+  (https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5)
+  
+* VIIRS: use more stringent cloud masking options by default
+  (thres_Rcloud_std = 0.005)
+
+* Add support for VIIRS/JPSS1
+  
+* README file: add a summary of the recommended flags for each sensor
+
+* Fix a problem with flagging of invalid pixels in landsat8 reader
+
+* Fix a bug in HICO reader
+
+Summary of the product evolution:
+* OLCI: significant changes due to updated SVC.
+  Improved stability in the sun glint.
+  Water reflectances may be slightly overestimated.
+* VIIRS: evolution of the default cloud mask
+* HICO: major improvement due to bugfix
+* Other sensors: no evolution
+
+
+v4.11
+-----
+
+Release date: 2019-05-14
+
+* OLCI: updated spectral bands usage.
+  Band 412 is not used for atmospheric correction anymore (but still provided
+  as an output), following what is done for VIIRS.
+  This solves occasional unstability issues.
+  SVC coefficients for OLCI are reset to 1 until OLCI SVC is re-generated.
+
+* SeaWiFS, MODIS, VIIRS: updated System Vicarious Coefficients (SVC) by
+  Constant Mazeran with NASA Reprocessing R2018, updated in-situ database and ERA-Interim parameters.
+  Only use this version with L1C files generated with SeaDAS configured for R2018!
+  Previous versions should only use L1C files generated with SeaDAS configured for R2014.
+
+* Add landsat8 reader
+  from polymer.level1_landsat8 import Level1_OLI
+  Landsat8 processing requires prior angle generation for band 1 in ENVI format.
+
+* HICO: Level1 reader is updated to the newer NetCDF format.
+
+* Fix a bug affecting Polymer's (basic) cloud mask
+  Rayleigh correction of the NIR bands used for cloud masking was affected by a
+  bug, resulting in over-correction, and therefore cloud mask was less strict than it should have.
+  This bug was introduced in version 4.8.
+
+Summary of the product evolution:
+    * All NASA sensors (MODIS, SeaWiFS, VIIRS) are affected by SVC gains update
+      and concomitant Level1 update
+    * OLCI is affected by bands configuration update and concomitant SVC gains reset
+    * MERIS and MSI results do not evolve, but:
+    * Change in Polymer's cloud mask for all sensors
+
+
+v4.10
+-----
+
+Release date: 2019-01-24
+
+* SeaWiFS, MODIS, VIIRS: Updated central wavelengths to be equal to the values
+  provided in SeaDAS (disactivate dynamic central wavelength calculation from
+  SRF files)
+* Updated Level1_ASCII to be able to process SeaWiFS, MODIS and VIIRS extractions.
+  Allow specifying units of ozone if Level1_ASCII.
+
+Summary of the impact on products (water reflectance) with default options:
+- MODIS, SeaWiFS, VIIRS: small changes
+- other sensors: no change
+
+
+v4.9
+----
+
+Release date: 2018-11-22
+
+* Updated OLCI vicarious calibration gains
+  This leads to a significant improvement of the validation results in the blue bands
+* Added HICO processing [EXPERIMENTAL]
+  The HICO reader is the class Level1_HICO in module Level1_hico.py
+* Added bands 681 and 709 by default for MERIS and OLCI
+* Other fixes:
+    * Fix Level1_NASA with netCDF-1.4
+    * Fix flagging of MSI out-of-swath pixels
+    * Fix flagging of OLCI invalid pixels
+    * Fix a bug in Leve1_ASCII when reading OLCI extracted data
+    * Deal with a formatting issue of SeaWiFS Level 1C
+      https://oceancolor.gsfc.nasa.gov/forum/oceancolor/topic_show.pl?tid=8804
+
+Summary of the impact on products (water reflectance) with default options:
+    - OLCI: significant changes
+    - Others: no change
+
+
+v4.8
+----
+
+Release date: 2018-04-27
+
+* Reworked Rayleigh correction.
+  Now Polymer uses a single Rayleigh Look-Up-Table for all sensors, tabulated
+  in Rayleigh optical thickness instead of sensors spectral bands.
+  This allows better accounting for per-pixel variations of wavelength (MERIS,
+  OLCI) and surface pressure.
+  Surface pressure can now take the elevation into account (see added DEMs).
+  Rayleigh optical thickness is calculated on the fly pixel by pixel using [Bodhaine,99].
+
+* Added Digital Elevation Model interfaces (DEM), used for modulation of
+  Rayleigh optical thickness.
+    - SRTM3: SRTM3 digital elevation model, version 2.1
+      Spatial resolution of 3arc-seconds (93m at equator), 56°S to 60°N
+    - GLOBE: NOAA Global Land One-km Base Elevation Project (GLOBE)
+      Spatial resolution of 1km, global.
+      Can be used as a fallback to SRTM3.
+
+* Added an independent landmask, based on global surface water (GSW: https://global-surface-water.appspot.com/).
+  This is particularly useful for Sentinel-2 which does not have a landmask in L1C.
+  It should be passed as a parameter to Level1 instances. Example:
+      from polymer.gsw import GSW
+      Level1_MSI('<L1C product>', landmask=GSW('<gsw tiles storage directory>'))
+
+* OLCI: avoid duplicate correction for sun-earth distance.
+  This has an impact on the retrieved Rw.
+
+* Use MSI SRF (spectral response functions) to calculate accurate central
+  wavelengths (different for S2A and S2B)
+  This has a significant impact on the water reflectance retrieval, especially
+  in the blue, mainly because of the change in equivalent wavelength of B2
+  (490nm, 60nm wide).
+
+* Optionnally use MODIS, SeaWiFS and VIIRS SRF to calculate central wavelengths
+  for each band. This leads to significant changes of the Rayleigh optical
+  thickness estimation, thus on Rayleigh correction.
+
+* Added the central wavelengths for each band in the product attributes
+
+* Added an anaconda installation helper (automates the installation of anaconda
+  dependencies required by Polymer)
+
+* Bug fixes, in particular avoid an occasional bug when reading pope97.dat
+
+* Caveat: Level1_ASCII does not yet take properly into account spectral
+  information for all sensors in the new Rayleigh correction scheme. A warning
+  is issued when it is the case.
+
+Summary of the impact on products (on Rw) with default options:
+    - MERIS: minor changes
+    - OLCI: moderate changes due to correction of duplicate sun-earth
+      distance correction (bias of a few percents)
+    - MSI: significant changes because of better accounting for spectral information
+    - VIIRS, MODIS, SeaWiFS:
+        - minor change with default options (use_srf=False)
+        - if use_srf=True, significant changes due to different accounting
+          for the sensors spectral response functions for Rayleigh correction).
+          This modification is still experimental. Consolidation and validation
+          are on-going.
+
+
+v4.7
+----
+
+Release date: 2018-02-02
+
+This release introduces vicarious calibration coefficients for OLCI, and
+corrects a few issues with previous version:
+
+* Added OLCI SVC coefficients provided by C. Mazeran
+  These coefficients are now used by default
+  The previous coefficients (gains=1) can be restored by passing the argument "calib=None" to run_atm_corr.
+* OLCI: fix a problem when using auxiliary data embedded in OLCI level1 (the default).
+  3rd order interpolation of the auxiliary data fields was used, which could result in negative wind speeds in some cases.
+  Now using linear interpolation.
+* Added support for OLCI in Level1_ASCII
+* Fix a problem in Level2 cleanup in case of code error
+* Level1_NETCDF:
+    - Fix a compatibility problem with older versions of libnetcdf
+    - Allow to specify the ozone unit
+
+
+v4.6
+----
+
+Release date: 2017-11-23
+
+New features:
+
+    * Now supporting Sentinel 2 processing at 10 and 20m spatial resolution
+      To activate high resolution processing, pass the option resolution=10 or
+      resolution=20 to Level1_MSI.
+
+    * Wavelength normalization for MERIS and OLCI.
+      In Polymer, the atmospheric correction is performed at each detector
+      wavelength (instead of applying smile correction to the TOA radiance). A new
+      spectral correction is applied to the final water reflectance, simultaneously with
+      the already existing bidirectional reflectance correction:
+          Rw_normalized = Rw(lam,geom)*(Rwmod(lam0,nadir)/Rwmod(lam,geom))
+          where:
+             lam is the measured wavelength (for a given detector)
+             lam0 is the central wavelength for the considered band
+             geom is the observation geometry
+             nadir is the normalization geometry, where the sun and sensor are both at nadir
+             Rw is the non-normalized water reflectance
+             Rw_mod is the water reflectance provided by Polymer's model for the current ocean parameters
+             Rw_normalized is the water reflectance, normalized for the 'nadir' observation geometry and the wavelength lam0
+      This correction is applied by default, and can be disactivated using the keyword normalize.
+
+    * Added ERA-Interim interface: interface with ECMWF ERA-Interim dataset.
+      Use it by passing an instance of Ancillary_ERA to the Level1.
+          from polymer.ancillary_era import Ancillary_ERA
+          Level1(<filename>, ancillary=Ancillary_ERA())
+      See the relevent section of README.TXT
+
+    * Add options to activate an optional "Arctic" mode in the ParkRuddick
+      model (credits Atsushi Matsuoka).
+      To activate it, pass the following arguments to run_atm_corr:
+        absorption='matsuoka': use aphy from Matsuoka et al, JGR 2011
+                               and Scdm from Matsuoka et al., 2013, BG
+        bbopt=2 : set the particle backscattering spectral dependency to eta=1
+
+    * Added support for Sentinel 2 products in netCDF4 format, as written by SNAP (Level1_NETCDF)
+
+Corrections:
+
+    * OLCI: fix flagging issues. Add an option to disactivate land masking in Level1_OLCI and Level1_NETCDF
+      (when providing the land mask through external masking)
+    * OLCI: use nearest neighbour interpolation for reading azimuth angles from tiepoint grids
+      This avoids incorrect interpolation when an azimuth changes sign.
+    * OLCI: fixed incorrect usage of ancillary data.
+      Now properly read all ancillary data from OLCI Level1, and switch to NASA
+      or ERA-Interim when passing the appropriate option (see README)
+    * Improved autodetection of Sentinel2 products.
+      The product autodetection feature is used when using the Level1 class, or polymer_cli.py
+    * Some minor fixes regarding Sentinel 2 products attributes
+
+
+v4.5
+----
+
+Release date: 2017-08-25
+
+Bug fixes:
+  * Fix improper flagging of NASA L1C
+    Was resulting in rows improperly flagged as CLOUD for VIIRS around trimmed pixels
+  * Fix for MM01 model: improper initialization could result in errors in high chl conditions
+  * Fix for compatibility with older versions of cython (0.23)
+
+v4.4
+----
+
+Release date: 2017-07-27
+
+* Add support for Level1 MERIS and OLCI files subsetted by SNAP, in NetCDF4 format.
+  Example:
+    from polymer.level1_netcdf import Level1_NETCDF
+    run_atm_corr(
+        Level1_NETCDF('subset_0_of_MER_FRS_1PPEPA20080806_094519_000005122071_00022_33643_2741.nc'),
+        Level2(),
+        )
+* Reintroduce support for external masking.
+  The relevant keyword to pass to run_atm_corr is external_mask.
+  external_mask can be:
+    * None
+    * a string: the filename of a hdf4 file containing an integer dataset 'mask'
+    * an integer or boolean numpy array
+    In the latter two cases, the shape of the mask shall be the same as the Level1 product.
+* Allow to select columns in MERIS and OLCI products.
+  Example for OLCI:
+    run_atm_corr(
+        Level1_OLCI(
+            filename,
+            sline=1117,     scol=2871,
+            eline=1117+100, ecol=2871+100,
+            ),
+        Level2(),
+        )
+* VIIRS: small change in params.py for backward compatibility (params_v3_5_VIIRS_MM01)
+* Add requirements.txt for python dependencies installation with 'pip install -r requirements.txt'
+* Minor consistency fix in OLCI params (bands definition)
+
+
+v4.3
+----
+
+Release date: 2017-07-17
+
+* Reintroduce bidirectional water reflectances in MM01
+  Directional model is used with water_model='MM01_FOQ'
+  Non-directional model is used with water_model='MM01'
+* Define parameters for VIIRS and OLCI, consistent with v3.5 with MM01 model (in params.py)
+  Use them like so:
+      from polymer.params import params_v3_5_VIIRS_MM01
+      run_atm_corr(..., **params_v3_5_VIIRS_MM01)
+* Some improvements in ancillary data management
+  (don't fail when no meteo file is available after the file date)
+* Keep build files in separate directory 'build'
+* Better filter out invalid pixels at high sza
+  (avoid raising a division by zero warning)
+* Allow writing partial spectra in Level2 output datasets
+  Example: Level2(..., datasets=['Rw',       # write all Rw bands
+                                 'Rtoa560',  # write only band Rtoa at 560
+                                        ])
+
+v4.2
+----
+
+Release date: 2017-04-26
+
+* Fixes to Sentinel-2 processing
+* Some functions are modules renaming.
+  previous import: from polymer.polymer import polymer
+  new import: from polymer.main import run_atm_corr
+  (previous import kept for backward compatibility)
+* Improved command line interface.
+* README update
+* Various cleanup and fixes
+    - netcdf output format improvements
+    - ancillary data handling
+    - python3 compatibility
+    - add script make_L1C.py
+
+
+v4.1
+----
+
+Release date: 2016-12-23
+
+* Updated SVC coefficients for using NCEP data instead of ERA
+* Improved netCDF4 support:
+    - support NETCDF_CLASSIC format (activated by default in netcdf output)
+      added keyword to switch to standard netcdf output
+    - write attributes in netCDF4 files
+* Improved attributes in output:
+    - write bitmask description
+    - write scene start and end times
+* Improved meteo and ozone files support
+    - support meteo interpolation in ancillary.py
+    - improved ancillary file search
+    - allow to provide explicitly couples of meteo files for interpolation
+    - interpolation is not activated for ozone files as NASA files are not
+      provided at a fixed date
+    - write names of ancillary files in the output attributes
+    - added offline mode to ancillary.py
+* MODIS: don't fail on grazing angles/night pixels
+  Flag such pixels as 'EXCEPTION', as was done before v4
+* Add a flag HIGH_AIR_MASS to flag air masses higher than 5
+  (rejects pixels when applying rejection bitmask expression "bitmask & 1023")
+* Embed rejection bitmask in bitmask attributes
+* Improvement in makefile
+* Various fixes, including python2/3 compatibility
+
+
+v4.0
+----
+
+Release date: 2016-10-18
+
+* Updated vicarious calibration coefficients (oct 2016)
+* Implemented the "thick aerosol" flag (problem detected for CCI QA, for
+  example MERIS orbit 14935)
+  Flag value is 64, applied by removing pixels such that bitmask & 1023 != 0
+
+
+v4.0beta5
+---------
+
+Release date: 2016-10-06
+
+* VIIRS: don't use band 412 by default
+  'Solves' problem of stability over clear waters (MOBY)
+* Use by default Rprime_consistency:
+  Check for inconsistent results (t*Rw or atmospheric signal Ratm exceeds TOA
+  corrected for Rayleigh only - at any band), triggers reinitialization.
+  Raises flag 2048.
+  Significant stability improvement for SeaWiFS - minor changes for other sensors.
+* Phytoplankton absorption: use Bricaud98 instead of Bricaud95
+* Add options to water model
+* Allow for 3 parameters inversion (chl, backscattering, absorption)
+  (not used by default)
+
+
+v4.0beta4
+---------
+
+Release date: 2016-09-16
+
+* fix a memory leak in multiprocessing mode
+* generalization of level1_ascii
+* Improved level1_msi
+* python3 fixes
+* packaging improvements (sources in the polymer/ directory).
+* Various fixes
+
+
+v4.0beta3
+---------
+
+Release date: 2016-07-29
+
+* added an inconsistency test which raises a flag (64) and reinitializes the pixel parameters.
+  Some unstable results for SeaWiFS are avoided. Some dubious pixels are flagged out.
+* improved the definition of the cost function by normalizing by the sum of
+  weights. This has an impact on backscattering constraint for clear waters and
+  should improve the inter-sensor consistency over clear waters.  The amplitude
+  of the constraint is modified accordingly.
+* Bugfix in Level1_ASCII (only affecting v4)
+* Fix month determination in NO2 calculation
+* Slight improvement in water reflectance calculation, improves consistency with C code.
+* Allow to pass external ancillary data to MERIS, as was already the case for
+  NASA sensors (see parameter ancillary of Level1_* classes)
+* Minor changes
+
+
+v4.0beta2
+---------
+
+Release date: 2016-07-25
+
+A few fixes:
+* Add a missing auxiliary file
+* Level1_ASCII: Deal with ASCII extractions of multiple sensors
++ a few more corrections
+
+
+v4.0beta1
+---------
+
+Release date: 2016-07-22
+
+* Complete rewrite in python+cython:
+    * Processing speed is similar to the C version (about 5% slower)
+    * Results should be quasi-identical to the results of v3.5
+        (verified thoroughly for MERIS, and roughly for NASA sensors)
+    * multiprocessing mode: can use several CPUs available on local machine to
+      speed-up processing
+    * command files are no longer used. Parameters are passed directly to the
+      python function 'polymer'.
+    * Support all previous sensors: MERIS, MODIS, SeaWiFS, VIIRS
+    * Support OLCI (Sentinel 3) and MSI (Sentinel 2)
+    * Support ASCII files (MERIS only)
+* Minor algorithm chage: avoid re-initializing minimizer when a negative
+  reflectance is obtained.
+  => Results are almost unchanged. Processing speed increases by about 30%.
+  (because slightly negative reflectances in the NIR are often obtained)
+
+
+v3.5
+----
+
+* LICENCE updated and included in the package
+* cleanup in README and run scripts
+* MODIS: avoid failing over granules containing ths>90
+* Fixed start/stop attributes in output (J. Dingle)
+* added missing command files command_meris_MM01.txt
+
+
+v3.4
+----
+
+* Cleanup of command files, especially for SeaWiFS
+* Split command files using old & new water models: MM01 and PR05
+  MM01 reproduces results from v3.2
+  PR05 reproduces results from v3.3
+* Add SeaWiFS support in make_L1C.py
+
+v3.3
+----
+
+* Added new ocean model (PR05) based on Park&Ruddick, 2005.
+  This model is adapted to case 1 and case 2 processing
+  Added necessary auxiliary files.
+* Added "full" normalization with this model
+* Switch between "case 1" and "case 2" modes (pixel initialization adapted to
+  resp. case 1 and case 2.
+  Added a flag 1024 when case 2 mode is used (this flag does not invalidate a pixel).
+* Added Raman scattering in PR05, based on simulations from Westberry et al, 2013
+* Updated atmospheric model: now use Rmol instead of lambda^-4
+  This reduces the bias at high latitudes
+  The command file parameter is changed from
+        POLY_EXPO         0. -1. -4.
+    to
+        POLY_EXPO         0. -1. 0.
+* Add support for L1C files in netcdf format (J. Dingle)
+* Updated MERIS, MODIS and VIIRS command files
+* Some cleanup
+
+
+v3.2
+----
+
+* VIIRS and MODIS: now use 'L1C' files produced by l2gen, which brings all
+  radiometric corrections to MODIS and VIIRS.
+  A sample file producing L1C files is provided in tools/make_L1C.py
+  A new class is added as an interface to these files: level1_l2gen.
+  The classes level1_modis and level1_viirs are no longer used and may be deleted.
+  The run and command files are updated accordingly.
+* minor update in MODIS LUTs: update wavelength 551 -> 547.
+  Only the wavelength is updated, the Rayleigh optical thickness (thus the
+  values of the LUT) is unchanged.
+
+
+v3.1
+----
+
+* Add VIIRS destriping
+  Uses VIIRS XCAL tables provided in SeaDAS
+  (added to Polymer's data package)
+* Write the meteo and ozone files in the level2 attributes
+
+
+v3.0
+----
+
+* support VIIRS processing
+  new dependency: requires hdf5 library (VIIRS processing can be deactivated in Makefile)
+  added new VIIRS auxiliary data (see checksums/data_viirs.md5)
+* (minor) fix a valgrind warning
+* add MERIS full resolution data
+  to process MERIS FR data, adjust FILE_SUN_SPEC_FLUX and
+  FILE_DETECTOR_WAVELENGTH in command file to use the FR version.
+* bugfix: properly read NO2 data when in ascii mode.
+  the NO2 correction did not work correctly when in ascii mode (which requires
+  reading 12 months of NO2 climatology instead of just 1).
+  => slight change of the results processed in ascii mode.
+Note: this version brings no change of the MERIS, MODIS and SeaWiFS results.
+
+
+v3.0beta8
+---------
+
+* fix reading of MODIS level 1. Now read radiances and convert to reflectance
+  instead of incorrectly directly reading 'reflectances'.
+  => change of results
+  Also updates MODIS F0 values:
+  auxdata/modis/sun_spectral_flux_2.txt replaces auxdata/modis/sun_spectral_flux.txt
+  and is provided in data package
+* update CALIB in command_modis.txt to match current values of NASA's vicarious coefficients
+
+
+v3.0beta7
+---------
+
+* NetCDF output: allow 'classic' NetCDF4 output
+  Activated by specifying 'OUTPUT_FORMAT NETCDF_CLASSIC' in command file
+* NetCDF output: change compression from 9 to 4
+* MODIS and SeaWiFS: write attributes 'start_time' and 'stop_time'
+* minor: fix tmpfiles includes in get_meteo and get_era_interim
+
+
+v3.0beta6
+---------
+
+* Bugfix
+* Minor Makefile tweak (Mike)
+
+
+v3.0beta5
+---------
+
+* do not stop processing when encountering a grazing angle (outside of the LUT
+  boundaries)
+  => this was preventing processing MODIS granules containing pixels with
+  grazing sun angle.
+  A new bitmask ("EXCEPTION") is dedicated to flagging such invalid pixels.
+* minor corrections and clean-up
+
+v3.0beta4
+---------
+
+* Add support for MERMAID (ASCII) input files.
+
+
+v3.0beta3
+---------
+
+* Added python script tools/get_era_interim.py
+    - download and interpolate ERA-Interim data (GRIB format)
+    - This script has the same functionality as get_meteo.py
+    - additional requirement: python library "pygrib"
+    - updated the sample python scripts run*.py to use optionally ERA-Interim
+
+* Minor change
+    - add option to write water reflectance from the model (for debugging)
+    - add option to skip normalization of the reflectances (for debugging)
+
+
+
+v3.0beta2
+---------
+
+* General changes
+
+    - fixed normalization of water reflectance (account for the gothic-R term)
+      => PRODUCT CHANGE, affects ALL PRODUCTS
+      The surface transmission in the sun direction is modeled after Wang2006
+      The command files have been updated to include a keyword related to this
+      normalization correction (BRDF_OPT)
+
+    - several minor corrections
+
+    - fixed a minor bug related to band indexing in the normalization step.
+      This bug could introduce a minor product change if BANDS_CORR, BANDS_OC and
+      BANDS_RW are not all identical in the command file.
+
+    - add the possibility to write intermediary products for debugging
+      (command file keywords WRITE_RTOA, WRITE_RTOAGC)
+
+* MERIS processing
+
+    - The values of Rayleigh optical thickness used to generate the look-up
+      tables have been updated to follow the SeaDAS values (derived from
+      Bodaine et al 1999).
+      => PRODUCT CHANGE
+      => The MERIS look-up table has been updated from LUTS/MERIS/LUT.hdf to
+         LUTS/MERIS/LUTB.hdf
+
+* Added processing of SeaWiFS data from level 1B.
+
+    - Added SeaWiFS command file (command_seawifs.txt)
+    - Added SeaWiFS sample run script (run_seawifs.py)
+    - Added SeaWiFS auxiliary data (see checksums/data_seawifs.md5)
+    - the 'invalid' SeaWiFS data is considered to be NAVWARN+NAVFAIL+HILT
+      (adjustable in src/main.cpp)
+
+
+
+
+v3.0beta1 (since v2.7)
+----------------------
+
+* General changes
+
+    - Changed LUT format: now using hdf format instead of binary, which is more
+      compact and flexible. The axes are stored along the LUT. The list of
+      auxiliary files (listed in checksums/*.md5) has thus changed. There is now an
+      optional distinction between solar and view zenith angles in the LUTs, in
+      view of using spherical LUTs where the principle of reciprocity is not valid.
+
+    - Improved debugging mode where all info is printed for one pixel specified by
+      lat/lon (required compilation in debug mode). The coordinates of the target
+      pixel are provided by the keyword "DEBUG_POINT <lat> <lon>" in the command
+      file. Only the debug_point is processed.
+
+    - Improved the base Array classes. Provide 2 different classes for storing data
+      in row-major order (ArrayC) or column-major order (ArrayF).
+
+    - Allow writing (optionally) the observation angles in the output file.
+
+    - Added consistency checks for the input parameters and files.
+
+    - Code cleanup and other small fixes.
+
+* MERIS processing:
+    - now properly flag out COSMETIC pixels
+    - otherwise, the products should be identical to v2.7
+
+* Added processing of MODIS data from level 1B. The GEO file must be present
+  alongside the L1B.
+
+* Changed auxiliary files according to the change of LUT format and presence of
+  MODIS processing. MODIS processing requires providing a FILE_METEO and a
+  FILE_OZONE, the same way as for MERIS when using TOMS+NCEP files.
+
+
+
