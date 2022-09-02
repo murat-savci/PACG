@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from os.path import isdir
+from pathlib import Path
+import shutil
 from datetime import datetime, timedelta
 import numpy as np
 from os import makedirs, system, remove
@@ -75,7 +77,8 @@ class LockFile(object):
         self.filename = filename
 
     def __enter__(self):
-        system('touch {}'.format(self.filename))
+        Path(self.filename).touch()
+        # system('touch {}'.format(self.filename))
 
     def __exit__(self, type, value, traceback):
         remove(self.filename)
@@ -328,8 +331,9 @@ class Ancillary_NASA(object):
                     'https://support.earthdata.nasa.gov/index.php?/Knowledgebase/Article/View/43/21/how-to-access-urs-gated-data-with-curl-and-wget'
                     assert not fp.read(100).startswith(b'<!DOCTYPE html>'), errormsg
 
-                cmd = 'mv {} {}'.format(target+'.tmp', target)
-                system(cmd)
+                # cmd = 'mv {} {}'.format(target+'.tmp', target)
+                # system(cmd)
+                shutil.move(target+'.tmp', target)
 
             else:
                 if exists(target+'.tmp'):
