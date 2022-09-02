@@ -221,6 +221,8 @@ class Params(object):
             self.defaults_oli()
         elif sensor == 'GENERIC':
             self.defaults_generic()
+        elif sensor == 'GOCI':
+            self.defaults_goci()
         else:
             raise Exception('Params.sensor_specific: invalid sensor "{}"'.format(sensor))
 
@@ -757,6 +759,41 @@ class Params(object):
                 }
 
         self.band_cloudmask = 865
+
+    def defaults_goci(self):
+        """
+        GOCI
+        """
+        self.bands_corr = [412,443,490,555,660,680,745,865]
+        self.bands_oc =   [412,443,490,555,660,680,745,865]
+        self.bands_rw =   [412,443,490,555,660,680,745,865]
+        self.band_cloudmask = 865
+        self.calib={412:1.0118,
+                    443:0.9954,
+                    490:0.9715,
+                    555:0.93431,
+                    660:0.9596,
+                    680:0.9669,
+                    745:0.96125,
+                    865:1.}
+
+        self.K_NO2={412:6.0019353e-19,
+                    443:5.0321511e-19,
+                    490:2.7957825e-19,
+                    555:8.9799824e-20,
+                    660:8.0383502e-21,
+                    680:7.2662390e-21,
+                    745:1.6221821e-21,
+                    865:1.0109970e-22}
+
+        self.K_OZ={412:0.00047250343,
+                   443:0.0029494704,
+                   490:0.022069045,
+                   555:0.097334836,
+                   660:0.055174862,
+                   680:0.03602673,
+                   745:0.010649867,
+                   865:0.0021870409}
 
     def bands_read(self):
         assert (np.diff(self.bands_corr) > 0).all()
