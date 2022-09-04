@@ -30,11 +30,18 @@ class Level1_GOCI():
         self.filename = filename
         with h5py.File(self.filename) as f:
             band1 = f['HDFEOS']['GRIDS']['Image Data']['Data Fields']['Band 1 Image Pixel Values'][()]
-            # use centertime for ancillary files, difference between centertime and slot 1&16 is less than 15 min
+            starttime = f['HDFEOS/POINTS/Ephemeris'].attrs['Scene Start time'].decode(
+                'utf-8')
             centertime = f['HDFEOS/POINTS/Ephemeris'].attrs['Scene center time'].decode(
                 'utf-8')
-            self.date = datetime.datetime.strptime(
-                centertime, '%d-%b-%Y %H:%M:%S.%f')
+   
+        # use datetime.datetime model to read start\center\end time as localtime
+        self.starttimedate = datetime.datetime.strptime(
+            starttime, '%d-%b-%Y %H:%M:%S.%f') 
+        # convert localtime to utc time
+        self.starttimedate=self.starttimedate.replace(tzinfo=datetime.timezone.utc)
+        self.centertimedate = datetime.datetime.strptime(
+            centertime, '%d-%b-%Y %H:%M:%S.%f')
         self.totalheight, self.totalwidth = band1.shape
         self.blocksize = blocksize
         self.sline = sline
@@ -78,9 +85,10 @@ class Level1_GOCI():
             )]
 
     def init_ancillary(self):
-        self.ozone = self.ancillary.get('ozone', self.date)
-        self.wind_speed = self.ancillary.get('wind_speed', self.date)
-        self.surf_press = self.ancillary.get('surf_press', self.date)
+        # use GOCI center slot time for ancillary
+        self.ozone = self.ancillary.get('ozone', self.centertimedate)
+        self.wind_speed = self.ancillary.get('wind_speed', self.centertimedate)
+        self.surf_press = self.ancillary.get('surf_press', self.centertimedate)
 
         self.ancillary_files = OrderedDict()
         self.ancillary_files.update(self.ozone.filename)
@@ -115,12 +123,9 @@ class Level1_GOCI():
         # vaa
         self.vaa = np.full((self.totalheight, self.totalwidth), -999.0,dtype=np.float32)
 
-        basetimestr = os.path.basename(self.filename)[17:30]
-        basedt = time.strptime(basetimestr, '%Y%m%d%H%M%S')
-        basetime = calendar.timegm(basedt)
         nslot = 16
         for i in np.arange(nslot):
-            realtime = basetime + round(self.goci_slot_relat_time[i])
+            realtime = self.starttimedate.timestamp() + round(self.goci_slot_relat_time[i])
             date = datetime.datetime.fromtimestamp(
                 realtime, tz=datetime.timezone.utc)
             self.sza[self.goci_slot == i+1] = 90 - \
@@ -232,7 +237,7 @@ class Level1_GOCI():
 
     def attributes(self, datefmt):
         attr = OrderedDict()
-        attr['datetime'] = self.date
+        attr['datetime'] = self.centertimedate
         return attr
 
     def __enter__(self):
