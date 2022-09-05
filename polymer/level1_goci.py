@@ -79,10 +79,10 @@ class Level1_GOCI():
     def init_lonlat(self):
         with h5py.File('./auxdata/goci/COMS_GOCI_L2P_GA_20110524031644.LAT.he5') as f:
             self.latitude = f['HDFEOS']['GRIDS']['Image Data']['Data Fields']['Latitude Image Pixel Values'][(
-            )]
+            )][self.sline:self.eline,self.scol:self.ecol]
         with h5py.File('./auxdata/goci/COMS_GOCI_L2P_GA_20110524031644.LON.he5') as f:
             self.longitude = f['HDFEOS']['GRIDS']['Image Data']['Data Fields']['Longitude Image Pixel Values'][(
-            )]
+            )][self.sline:self.eline,self.scol:self.ecol]
 
     def init_ancillary(self):
         # use GOCI center slot time for ancillary
@@ -99,29 +99,28 @@ class Level1_GOCI():
         print('Generating GOCI slot data...')
         with h5py.File(self.filename) as f:
             nav_data = f['HDFEOS/POINTS/Navigation for GOCI/Data/Navigation for GOCI']
-            self.goci_slot = goci_slots(
-                nav_data, self.totalheight, self.totalwidth, 7)
+            self.goci_slot = goci_slots(nav_data, self.sline, self.eline, self.scol, self.ecol, 7)
             self.goci_slot_relat_time = goci_slots_time(nav_data)
         print('Finished generating GOCI slot data.')
 
     def read_l1b(self):
         nband = len(self.band)
-        self.Ltoa_data = np.zeros([self.totalheight, self.totalwidth, nband])
+        self.Ltoa_data = np.zeros([self.height, self.width, nband])
         with h5py.File(self.filename) as f:
             scale = f['HDFEOS/POINTS/Radiometric Calibration for GOCI'].attrs['Table for DN to Radiance conversion']
             for i in np.arange(nband):
-                self.Ltoa_data[:, :, i] = np.array(f['HDFEOS/GRIDS/Image Data/Data Fields/Band '+str(
-                    i+1)+' Image Pixel Values'])*scale[i]
+                self.Ltoa_data[:, :, i] = f['HDFEOS/GRIDS/Image Data/Data Fields/Band '+str(
+                    i+1)+' Image Pixel Values'][()][self.sline:self.eline,self.scol:self.ecol]*scale[i]
 
     def init_geometry(self):
         # sza
-        self.sza = np.full((self.totalheight, self.totalwidth), -999.0,dtype=np.float32)
+        self.sza = np.full((self.height, self.width), -999.0,dtype=np.float32)
         # saa
-        self.saa = np.full((self.totalheight, self.totalwidth), -999.0,dtype=np.float32)
+        self.saa = np.full((self.height, self.width), -999.0,dtype=np.float32)
         # vza
-        self.vza = np.full((self.totalheight, self.totalwidth), -999.0,dtype=np.float32)
+        self.vza = np.full((self.height, self.width), -999.0,dtype=np.float32)
         # vaa
-        self.vaa = np.full((self.totalheight, self.totalwidth), -999.0,dtype=np.float32)
+        self.vaa = np.full((self.height, self.width), -999.0,dtype=np.float32)
 
         nslot = 16
         for i in np.arange(nslot):
@@ -149,15 +148,15 @@ class Level1_GOCI():
         with h5py.File(self.landmask) as f:
             # ocean is 0, land is 2
             self.landmask_data = f['HDFEOS']['GRIDS']['Image Data']['Data Fields']['Land Image Pixel Values'][(
-            )]
+            )][self.sline:self.eline,self.scol:self.ecol]
 
     def read_block(self, size, offset, bands):
         (ysize, xsize) = size
         nbands = len(bands)
 
         block = Block(offset=offset, size=size, bands=bands)
-        SY = slice(offset[0]+self.sline, offset[0]+self.sline+ysize)
-        SX = slice(offset[1]+self.scol, offset[1]+self.scol+xsize)
+        SY = slice(offset[0], offset[0]+ysize)
+        SX = slice(offset[1], offset[1]+xsize)
 
         # read latitude/longitude
         block.latitude = self.latitude[SY, SX]
@@ -205,8 +204,8 @@ class Level1_GOCI():
         block.altitude = np.zeros(size, dtype='float32')
 
         # solar irradiance (seasonally corrected)
-        block.jday = self.date.timetuple().tm_yday
-        block.month = self.date.timetuple().tm_mon
+        block.jday = self.centertimedate.timetuple().tm_yday
+        block.month = self.centertimedate.timetuple().tm_mon
 
         # detector wavelength
         block.wavelen = np.zeros((ysize, xsize, nbands), dtype='float32') + np.NaN

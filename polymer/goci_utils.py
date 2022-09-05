@@ -27,7 +27,8 @@ def goci_sensor_azimuth(latitude, longitude, satellite_longitude):
                     0.0] = esazimuth_deg[esazimuth_deg < 0.0] + 360.0
     return esazimuth_deg
 
-def goci_slots(nav_data, height, width, band):
+def goci_slots(nav_data, sline, eline, spixl, epixl, band):
+    height, width = eline-sline, epixl-spixl
     PARAM_INDEX_A = 5
     PARAM_INDEX_B = 14
     PARAM_INDEX_C = 22
@@ -35,7 +36,7 @@ def goci_slots(nav_data, height, width, band):
     di = np.full([height, width, 16], float('-inf'))
 
     for slot_index in range(16):
-        y, x = np.mgrid[0:height, 0:width]
+        y, x = np.mgrid[sline:eline, spixl:epixl]
         sbp = nav_data[band * 16 + slot_index]
         sbp = np.hstack((sbp[4], sbp[5], sbp[6], sbp[7],
                         sbp[13][:9], sbp[15][:8], sbp[17][:9], sbp[19][:8]))
