@@ -25,8 +25,8 @@ class Level1_GOCI():
         self.tauray = np.array([0.31667194, 0.23525281, 0.15534917, 0.09366972,
                                 0.04625096, 0.04092455, 0.02828797, 0.01555036])
 
-        self.F0 = [173.231, 189.070, 196.490, 183.335, 151.961,
-                   147.492, 127.785, 95.443]  # [mW/cm^2/um/sr]
+        self.F0 = [1732.31, 1890.70, 1964.90, 1833.35, 1519.61,
+                   1474.92, 1277.85, 954.43]  # [W/m^2/um]
         self.filename = filename
         with h5py.File(self.filename) as f:
             band1 = f['HDFEOS']['GRIDS']['Image Data']['Data Fields']['Band 1 Image Pixel Values'][()]
