@@ -196,7 +196,7 @@ class Ancillary_NASA(object):
         if uncompress is None:
             uncompress = filename.endswith(".bz2")
         if uncompress:
-            with tempfile.NamedTemporaryFile() as decomp_file, open(filename, 'rb') as fp:
+            with tempfile.NamedTemporaryFile(delete=False) as decomp_file, open(filename, 'rb') as fp:
                 compdata = fp.read()
                 try:
                     decompdata = bz2.decompress(compdata)
@@ -207,7 +207,7 @@ class Ancillary_NASA(object):
 
                 D = self.read(param, decomp_file.name,
                               uncompress=False, orig_filename=filename)
-
+                decomp_file.close()
                 return D
 
         if orig_filename is None:
