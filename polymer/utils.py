@@ -44,6 +44,7 @@ def safemove(A, B):
         shutil.move(A, B)
 
     else:
+        """
         cmd = 'mv {} {}'.format(A, B+'.tmp')
         if system(cmd):
             raise IOError('Error executing "{}"'.format(cmd))
@@ -51,6 +52,9 @@ def safemove(A, B):
         cmd = 'mv {} {}'.format(B+'.tmp', B)
         if system(cmd):
             raise IOError('Error executing "{}"'.format(cmd))
+        """
+        shutil.move(A, B+'.tmp')
+        shutil.move(B+'.tmp', B)
 
 
 def landmask(lat, lon, resolution='l'):
